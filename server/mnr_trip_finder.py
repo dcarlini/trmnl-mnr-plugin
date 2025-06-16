@@ -8,9 +8,10 @@ from collections import defaultdict
 import threading
 import time as time_module
 import os
+from google.transit import gtfs_realtime_pb2
 
 # Run ./bin/generate_gtfs_proto.py to generate the gtfs_realtime_pb2 module
-from generated import gtfs_realtime_pb2
+# from generated import gtfs_realtime_pb2
 
 GTFS_STATIC_URL = "http://web.mta.info/developers/data/mnr/google_transit.zip"
 GTFS_REALTIME_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/mnr%2Fgtfs-mnr"
@@ -131,20 +132,20 @@ class MNR_Trip_Finder:
         arr_key_id = (trip_id, to_id)
 
         dep_update = realtime_updates.get(dep_key_short)
-        if dep_update:
-            print(f"Realtime update matched dep_key_short: {dep_key_short}")
-        else:
+        if not dep_update:
             dep_update = realtime_updates.get(dep_key_id)
-            if dep_update:
-                print(f"Realtime update matched dep_key_id: {dep_key_id}")
-
+        #     if dep_update:
+        #         print(f"Realtime update matched dep_key_id: {dep_key_id}")
+        # else:
+        #     print(f"Realtime update matched dep_key_short: {dep_key_short}")
+    
         arr_update = realtime_updates.get(arr_key_short)
-        if arr_update:
-            print(f"Realtime update matched arr_key_short: {arr_key_short}")
-        else:
+        if not arr_update:
             arr_update = realtime_updates.get(arr_key_id)
-            if arr_update:
-                print(f"Realtime update matched arr_key_id: {arr_key_id}")
+        #     if arr_update:
+        #         print(f"Realtime update matched arr_key_id: {arr_key_id}")
+        # else:
+        #     print(f"Realtime update matched arr_key_short: {arr_key_short}")
 
         updated_departure_time = safe_format(dep_update["departure_time"]) if dep_update else None
         updated_arrival_time = safe_format(arr_update["arrival_time"]) if arr_update else None
@@ -196,6 +197,7 @@ class MNR_Trip_Finder:
                 arr_time_obj, arr_sec = self.parse_gtfs_time(to_stop["arrival_time"])
                 if arr_sec < dep_sec:
                     arr_sec += 86400
+                    
                 if dep_sec <= now_sec:
                     continue
 
