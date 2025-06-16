@@ -6,6 +6,10 @@ app = Flask(__name__)
 # Initialize the trip finder with real-time updates enabled
 trip_finder = MNR_Trip_Finder(use_realtime=True)
 
+@app.route("/")
+def home():
+    return "Hi! Welcome to the MNR Trip Finder API. Use the /find-mnr-trips endpoint to find trips."
+
 @app.route('/find-mnr-trips', methods=['GET'])
 def get_trips():
     origin = request.args.get('origin')
@@ -17,7 +21,7 @@ def get_trips():
 
     try:
         trips = trip_finder.find_trips(origin, destination, date)
-        return jsonify(trips)
+        return jsonify({"trips": trips})
     except ValueError as ve:
         return jsonify({'error': str(ve)}), 400
     except Exception as e:
@@ -27,4 +31,4 @@ def get_trips():
         }), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=8080)
