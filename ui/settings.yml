@@ -1,0 +1,27 @@
+---
+strategy: polling
+no_screen_padding: 'no'
+dark_mode: 'no'
+static_data: ''
+polling_verb: get
+polling_url: https://trmnl-mnr-plugin-server-956348378776.us-east4.run.app/find-mnr-trips?origin={{ origin }}&destination={{ destination }}
+polling_headers: ''
+id: 97591
+custom_fields:
+- keyname: About
+  name: About This Plugin
+  field_type: author_bio
+  description: Upcoming departures for NY/CT Metro North Railroad
+  github_url: https://github.com/dcarlini/trmnl-mnr-plugin
+- keyname: origin
+  field_type: string
+  name: Origin
+  description: The Origin Destination
+  placeholder: Grand Central
+- keyname: destination
+  field_type: string
+  name: Destination
+  description: The trip destination
+  placeholder: Stamford
+name: Metro North Departures
+refresh_interval: 60

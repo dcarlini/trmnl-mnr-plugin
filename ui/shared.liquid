@@ -1,0 +1,67 @@
+{% template nextrip %}
+{% if full_width %}{% assign truncate = 50 %}
+{% else %}{% assign truncate = 30 %}
+{% endif %}
+<div class="layout layout--top">
+  <table class="table">
+    <thead>
+      <tr>
+        {% if full_width %}
+        <th><span class="label label--bold w--20">Last Stop</span></th>
+        {% endif %}
+        <th><span class="label label--bold">Departs</span></th>
+        <th><span class="label label--bold">Arrives</span></th>
+        {% if full_width %}
+        <th><span class="label label--bold">Stops</span></th>
+        {% endif %}
+        {% if full_width %}
+        <th><span class="label label--bold">Duration</span></th>
+        {% endif %}
+        {% if full_width %}
+        <th><span class="label label--bold">Track</span></th>
+        {% endif %}
+        <th><span class="label label--bold">Status</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% assign count = 0 %}
+      {% for item in trips %}
+      {% assign count = count | plus: 1 %}
+      <tr>
+        {% if full_width %}
+          <td><span class="label">{{ item.last_stop }}</span></td>
+        {% endif %}
+        <td><span class="label">{{ item.scheduled_departure_time | truncate: truncate }}</span></td>
+        <td><span class="label">{{ item.scheduled_arrival_time | truncate: truncate }}</span></td>
+        {% if full_width %}
+          <td><span class="label">{{ item.stop_count | truncate: truncate }}</span></td>
+        {% endif %}
+        {% if full_width %}
+          <td><span class="label">{{ item.duration_minutes | truncate: truncate }} mins</span></td>
+        {% endif %}
+        {% if full_width %}
+          <td><span class="label">{{ item.track | truncate: truncate }}</span></td>
+        {% endif %}
+        <td><span class="label">{{ item.departure_status | truncate: truncate }}</span></td>
+      </tr>
+      {% endfor %}
+      {% if count == 0 %}
+      <tr>
+        <td><span class="label">No Routes Found</span></td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endtemplate %}
+
+{% template title_bar %}
+<div class="title_bar">
+  <img class="image image-stroke" src="https://www.google.com/s2/favicons?sz=48&domain_url=https%3A%2F%2Fwww.mta.info%2Fagency%2Fmetro-north-railroad"/>
+  {% if full_width %}<span class="title">Metro North Departures - </span>{% endif %}
+  <span class="title">{{  trmnl.plugin_settings.custom_fields_values.origin }}</span>
+  <span class="title"> to </span>
+  <span class="title">{{ trmnl.plugin_settings.custom_fields_values.destination }}</span>
+  {% if full_width %}<span class="instance">{{ "now" | date: '%s' | plus: trmnl.user.utc_offset | date: "%l:%M %p" }}</span>{% endif %}
+</div>
+{% endtemplate %}
