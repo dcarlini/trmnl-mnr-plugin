@@ -8,9 +8,11 @@ from io import BytesIO
 from datetime import datetime, date, time, timedelta
 from collections import defaultdict
 from google.transit import gtfs_realtime_pb2
+import pytz
 
 GTFS_STATIC_URL = "http://web.mta.info/developers/data/mnr/google_transit.zip"
 GTFS_REALTIME_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/mnr%2Fgtfs-mnr"
+TZ = pytz.timezone("America/New_York")
 
 class MNR_Trip_Finder:
     def __init__(self, use_local_path=None, use_realtime=False):
@@ -102,6 +104,7 @@ class MNR_Trip_Finder:
         except ValueError:
             hours, minutes, seconds = map(int, t_str.split(":"))
             dt = datetime.combine(date.today(), time(0, 0)) + timedelta(hours=hours, minutes=minutes, seconds=seconds)
+
         return dt
 
     def build_lookup_tables(self):
@@ -160,7 +163,7 @@ class MNR_Trip_Finder:
 
     def find_trips(self, origin, destination, date_str=None):
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else date.today()
-        now = datetime.now()
+        now = datetime.now(TZ)
 
         stop_name_to_id, stop_id_to_name = self.build_lookup_tables()
         from_id = stop_name_to_id.get(origin.strip().upper())
