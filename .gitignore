@@ -3,3 +3,4 @@ __pycache__/*.pyc
 
 bin/gtfs-realtime.proto
 server/generated/gtfs_realtime_pb2.py
+.DS_Store
