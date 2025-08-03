@@ -28,8 +28,10 @@ The JSON response is parsed and rendered visually defined by liquid templates
 
 ## 📦 Installation
 
+The author's handle id `dcarlini`, but you should change this to your username if you've forked the repo.
+
 ```bash
-git clone https://github.com/yourusername/mnr-trip-finder.git
+git clone https://github.com/dcarlini/mnr-trip-finder.git
 cd mnr-trip-finder
 pip install -r requirements.txt
 ```
