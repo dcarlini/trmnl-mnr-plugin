@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from mnr_trip_finder import MNR_Trip_Finder
+from __version__ import __version__, __title__, __description__, API_VERSION
 
 app = Flask(__name__)
 
@@ -8,7 +9,26 @@ trip_finder = MNR_Trip_Finder(use_realtime=True)
 
 @app.route("/")
 def home():
-    return "Hi! Welcome to the MNR Trip Finder API. Use the /find-mnr-trips endpoint to find trips."
+    return jsonify({
+        "name": __title__,
+        "description": __description__,
+        "version": __version__,
+        "api_version": API_VERSION,
+        "endpoints": {
+            "/": "API information",
+            "/find-mnr-trips": "Find Metro-North trips between stations",
+            "/version": "Version information"
+        },
+        "message": "Welcome to the MNR Trip Finder API!"
+    })
+
+@app.route("/version")
+def version():
+    return jsonify({
+        "version": __version__,
+        "api_version": API_VERSION,
+        "name": __title__
+    })
 
 @app.route('/find-mnr-trips', methods=['GET'])
 def get_trips():
