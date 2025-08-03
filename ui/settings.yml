@@ -4,7 +4,7 @@ no_screen_padding: "no"
 dark_mode: "no"
 static_data: ""
 polling_verb: get
-polling_url: https://trmnl-mnr-plugin-server-956348378776.us-east4.run.app/find-mnr-trips?origin={{ origin }}&destination={{ destination }}
+polling_url: https://trmnl-mnr-plugin-server-956348378776.us-east4.run.app/find-mnr-trips?origin={{ origin }}&destination={{ destination }}&transferTimeMin={{ transferTimeMin }}&transferTimeMax={{ transferTimeMax }}&showDirectTripsOnly={{ showDirectTripsOnly }}
 polling_headers: ""
 id: 97591
 custom_fields:
@@ -23,5 +23,27 @@ custom_fields:
     name: Destination
     description: The trip destination
     placeholder: Stamford
+  - keyname: transferTimeMin
+    field_type: number
+    name: Minimum Transfer Time (minutes)
+    description: Minimum transfer time in minutes (1-60)
+    placeholder: "5"
+    default: "5"
+  - keyname: transferTimeMax
+    field_type: number
+    name: Maximum Transfer Time (minutes)
+    description: Maximum transfer time in minutes (transferTimeMin-480)
+    placeholder: "120"
+    default: "120"
+  - keyname: showDirectTripsOnly
+    field_type: select
+    name: Show Direct Trips Only
+    description: Set to show only direct trips
+    default: "0"
+    options:
+      - value: "0"
+        label: "Show all trips"
+      - value: "1"
+        label: "Direct trips only"
 name: Metro North Departures
 refresh_interval: 60
