@@ -161,7 +161,7 @@ class MNR_Trip_Finder:
 
         return departure_status, arrival_status
 
-    def find_trips(self, origin, destination, date_str=None):
+    def find_trips(self, origin, destination, date_str=None, transfer_time_min=5, transfer_time_max=120, show_direct_trips_only=False):
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else date.today()
         now = datetime.now(TZ)
 
@@ -173,6 +173,25 @@ class MNR_Trip_Finder:
 
         valid_services = self.get_service_ids_for_date(target_date)
 
+        # Always find direct trips
+        direct_trips = self._find_direct_trips(from_id, to_id, origin, destination, 
+                                             valid_services, stop_id_to_name, now, target_date)
+        
+        # If only direct trips requested, return them
+        if show_direct_trips_only:
+            return sorted(direct_trips, key=lambda x: x["raw_departure_time"])[:10]
+        
+        # Default behavior: find both direct and transfer trips
+        transfer_trips = self._find_transfer_trips(from_id, to_id, origin, destination,
+                                                 valid_services, stop_id_to_name, now, target_date,
+                                                 transfer_time_min, transfer_time_max)
+        
+        # Combine and sort all trips by departure time
+        all_trips = direct_trips + transfer_trips
+        return sorted(all_trips, key=lambda x: x["raw_departure_time"])[:10]
+
+    def _find_direct_trips(self, from_id, to_id, origin, destination, valid_services, 
+                          stop_id_to_name, now, target_date):
         trip_stops = defaultdict(list)
         for entry in self.gtfs_data["stop_times.txt"]:
             trip_stops[entry["trip_id"]].append(entry)
@@ -224,21 +243,120 @@ class MNR_Trip_Finder:
                     "trip_id": trip_id,
                     "raw_departure_time": dep_time_dt,
                     "scheduled_departure_time": departure_time_fmt,
-                    # "updated_departure_time": updated_departure_time,
                     "scheduled_arrival_time": arrival_time_fmt,
-                    # "updated_arrival_time": updated_arrival_time,
-                    # "departure_delay": departure_delay,
-                    # "arrival_delay": arrival_delay,
                     "departure_status": departure_status,
                     "arrival_status": arrival_status,
                     "duration_minutes": duration_minutes,
                     "track": track,
-                    # "stops": [stop_id_to_name.get(s["stop_id"], s["stop_id"]) for s in stops_sorted],
                     "stop_count": stop_ids.index(to_id) - stop_ids.index(from_id) + 1,
-                    "last_stop": last_stop
+                    "last_stop": last_stop,
+                    "transfer_required": False
                 })
 
-        return sorted(upcoming_trips, key=lambda x: x["raw_departure_time"])[:10]
+        return upcoming_trips
+
+    def _find_transfer_trips(self, from_id, to_id, origin, destination, valid_services, 
+                           stop_id_to_name, now, target_date, transfer_time_min=5, transfer_time_max=120):
+        trip_stops = defaultdict(list)
+        for entry in self.gtfs_data["stop_times.txt"]:
+            trip_stops[entry["trip_id"]].append(entry)
+
+        trip_service = {t["trip_id"]: t["service_id"] for t in self.gtfs_data["trips.txt"]}
+        trip_short_name_map = {t["trip_id"]: t.get("trip_short_name", "") for t in self.gtfs_data["trips.txt"]}
+        
+        # Find all trips from origin
+        origin_trips = []
+        for trip_id, stops in trip_stops.items():
+            if trip_service.get(trip_id) not in valid_services:
+                continue
+            
+            stops_sorted = sorted(stops, key=lambda x: int(x["stop_sequence"]))
+            stop_ids = [s["stop_id"] for s in stops_sorted]
+            
+            if from_id in stop_ids:
+                from_stop = next(s for s in stops_sorted if s["stop_id"] == from_id)
+                dep_time_dt = self.parse_gtfs_time(from_stop["departure_time"])
+                
+                if dep_time_dt.time() <= now.time() and target_date == date.today():
+                    continue
+                
+                # Get all possible transfer stations (stations after origin on this trip)
+                from_index = stop_ids.index(from_id)
+                for i in range(from_index + 1, len(stops_sorted)):
+                    transfer_stop = stops_sorted[i]
+                    transfer_id = transfer_stop["stop_id"]
+                    transfer_arr_time = self.parse_gtfs_time(transfer_stop["arrival_time"])
+                    
+                    if transfer_arr_time < dep_time_dt:
+                        transfer_arr_time += timedelta(days=1)
+                    
+                    origin_trips.append({
+                        "trip_id": trip_id,
+                        "trip_short_name": trip_short_name_map.get(trip_id, ""),
+                        "departure_time": dep_time_dt,
+                        "transfer_station_id": transfer_id,
+                        "transfer_station_name": stop_id_to_name.get(transfer_id, transfer_id),
+                        "transfer_arrival_time": transfer_arr_time,
+                        "from_stop": from_stop
+                    })
+        
+        # Find connecting trips to destination
+        transfer_trips = []
+        for origin_trip in origin_trips:
+            transfer_id = origin_trip["transfer_station_id"]
+            transfer_arr_time = origin_trip["transfer_arrival_time"]
+            
+            for trip_id, stops in trip_stops.items():
+                if trip_service.get(trip_id) not in valid_services:
+                    continue
+                
+                stops_sorted = sorted(stops, key=lambda x: int(x["stop_sequence"]))
+                stop_ids = [s["stop_id"] for s in stops_sorted]
+                
+                if transfer_id in stop_ids and to_id in stop_ids and stop_ids.index(transfer_id) < stop_ids.index(to_id):
+                    transfer_stop = next(s for s in stops_sorted if s["stop_id"] == transfer_id)
+                    dest_stop = next(s for s in stops_sorted if s["stop_id"] == to_id)
+                    
+                    transfer_dep_time = self.parse_gtfs_time(transfer_stop["departure_time"])
+                    dest_arr_time = self.parse_gtfs_time(dest_stop["arrival_time"])
+                    
+                    # Handle day rollover for transfer departure
+                    if transfer_dep_time < transfer_arr_time:
+                        transfer_dep_time += timedelta(days=1)
+                    if dest_arr_time < transfer_dep_time:
+                        dest_arr_time += timedelta(days=1)
+                    
+                    # Ensure reasonable transfer time
+                    transfer_wait_minutes = (transfer_dep_time - transfer_arr_time).total_seconds() / 60
+                    if transfer_wait_minutes < transfer_time_min or transfer_wait_minutes > transfer_time_max:
+                        continue
+                    
+                    total_duration = int((dest_arr_time - origin_trip["departure_time"]).total_seconds() // 60)
+                    
+                    # Skip unreasonably long journeys (over 8 hours)
+                    if total_duration > 480:
+                        continue
+                    
+                    transfer_trips.append({
+                        "trip_short_name": f"{origin_trip['trip_short_name']} → {trip_short_name_map.get(trip_id, '')}",
+                        "origin": origin,
+                        "destination": destination,
+                        "trip_id": f"{origin_trip['trip_id']} → {trip_id}",
+                        "raw_departure_time": origin_trip["departure_time"],
+                        "scheduled_departure_time": origin_trip["departure_time"].strftime("%I:%M %p"),
+                        "scheduled_arrival_time": dest_arr_time.strftime("%I:%M %p"),
+                        "departure_status": None,
+                        "arrival_status": None,
+                        "duration_minutes": total_duration,
+                        "track": origin_trip["from_stop"].get("stop_headsign", "") or "N/A",
+                        "stop_count": "Transfer required",
+                        "last_stop": stop_id_to_name.get(stops_sorted[-1]["stop_id"], stops_sorted[-1]["stop_id"]),
+                        "transfer_required": True,
+                        "transfer_station": origin_trip["transfer_station_name"],
+                        "transfer_wait_minutes": int(transfer_wait_minutes)
+                    })
+        
+        return transfer_trips
 
 
 if __name__ == "__main__":

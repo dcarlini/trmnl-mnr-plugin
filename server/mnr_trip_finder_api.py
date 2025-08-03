@@ -15,12 +15,22 @@ def get_trips():
     origin = request.args.get('origin')
     destination = request.args.get('destination')
     date = request.args.get('date')  # Optional: format YYYY-MM-DD
+    transfer_time_min = request.args.get('transferTimeMin', 5, type=int)  # Default 5 minutes
+    transfer_time_max = request.args.get('transferTimeMax', 120, type=int)  # Default 2 hours
+    show_direct_trips_only = request.args.get('showDirectTripsOnly', '0') == '1'  # Default false
 
     if not origin or not destination:
         return jsonify({'error': 'Both origin and destination parameters are required.'}), 400
 
+    # Validate transfer time parameters
+    if transfer_time_min < 1 or transfer_time_min > 60:
+        return jsonify({'error': 'transferTimeMin must be between 1 and 60 minutes.'}), 400
+    
+    if transfer_time_max < transfer_time_min or transfer_time_max > 480:
+        return jsonify({'error': 'transferTimeMax must be between transferTimeMin and 480 minutes (8 hours).'}), 400
+
     try:
-        trips = trip_finder.find_trips(origin, destination, date)
+        trips = trip_finder.find_trips(origin, destination, date, transfer_time_min, transfer_time_max, show_direct_trips_only)
         return jsonify({"trips": trips})
     except ValueError as ve:
         return jsonify({'error': str(ve)}), 400
