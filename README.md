@@ -75,7 +75,7 @@ http://localhost:8080/find-mnr-trips?origin=Stamford&destination=Grand%20Central
 | `destination` | string | *required* | Destination station name |
 | `date` | string | today | Date in YYYY-MM-DD format |
 | `transferTimeMin` | integer | 5 | Minimum transfer time in minutes (1-60) |
-| `transferTimeMax` | integer | 120 | Maximum transfer time in minutes (transferTimeMin-480) |
+| `transferTimeMax` | integer | 30 | Maximum transfer time in minutes (transferTimeMin-480) |
 | `showDirectTripsOnly` | string | 0 | Set to "1" to show only direct trips, omit or "0" for both direct and transfer trips |
 
 ### Examples
@@ -200,7 +200,7 @@ The API intelligently handles routes that require transfers:
 
 1. **Mixed Results**: By default, shows both direct and transfer trips sorted chronologically (like the official Metro-North app)
 2. **Direct Only Option**: Use `showDirectTripsOnly=1` to filter out transfer connections
-3. **Smart Filtering**: Only shows reasonable transfer times (configurable 5-120 minutes by default)
+3. **Smart Filtering**: Only shows reasonable transfer times (configurable 5-30 minutes by default)
 4. **Transfer Details**: Provides transfer station name and wait time information
 
 ### Common Transfer Routes
@@ -211,7 +211,7 @@ The API intelligently handles routes that require transfers:
 ### Transfer Time Configuration
 
 - **Minimum Transfer Time**: Ensures sufficient time to change trains (default: 5 minutes)
-- **Maximum Transfer Time**: Avoids unreasonably long waits (default: 2 hours)
+- **Maximum Transfer Time**: Avoids unreasonably long waits (default: 30 minutes)
 - **Customizable**: Adjust via API parameters based on your preferences
 
 ## 🗃️ Data Sources

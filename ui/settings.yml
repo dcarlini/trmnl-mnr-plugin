@@ -33,8 +33,8 @@ custom_fields:
     field_type: number
     name: Maximum Transfer Time (minutes)
     description: Maximum transfer time in minutes (transferTimeMin-480)
-    placeholder: "120"
-    default: "120"
+    placeholder: "30"
+    default: "30"
   - keyname: showDirectTripsOnly
     field_type: select
     name: Show Direct Trips Only

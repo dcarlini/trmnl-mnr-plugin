@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `transferTimeMin` | integer | 5 | Minimum transfer time in minutes (1-60) |
-| `transferTimeMax` | integer | 120 | Maximum transfer time in minutes (transferTimeMin-480) |
+| `transferTimeMax` | integer | 30 | Maximum transfer time in minutes (transferTimeMin-480) |
 | `showDirectTripsOnly` | string | "0" | Set to "1" to show only direct trips |
 
 ## Example Usage

@@ -36,7 +36,7 @@ def get_trips():
     destination = request.args.get('destination')
     date = request.args.get('date')  # Optional: format YYYY-MM-DD
     transfer_time_min = request.args.get('transferTimeMin', 5, type=int)  # Default 5 minutes
-    transfer_time_max = request.args.get('transferTimeMax', 120, type=int)  # Default 2 hours
+    transfer_time_max = request.args.get('transferTimeMax', 30, type=int)  # Default 30 minutes
     show_direct_trips_only = request.args.get('showDirectTripsOnly', '0') == '1'  # Default false
 
     if not origin or not destination:

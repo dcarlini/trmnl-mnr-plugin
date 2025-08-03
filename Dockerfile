@@ -32,5 +32,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose Flask port
 EXPOSE 8080
 
-# Start the Flask API
-CMD ["python", "mnr_trip_finder_api.py"]
+# Start the Flask API with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "mnr_trip_finder_api:app"]
