@@ -21,31 +21,44 @@ class MNR_Trip_Finder:
         self._gtfs_lock = threading.Lock()
         self._gtfs_thread = threading.Thread(target=lambda: self._periodic_update_gtfs(use_local_path), daemon=True)
         self._gtfs_thread.start()
-        self._update_gtfs_data()
+        self._update_gtfs_data(use_local_path)
 
-    def _update_gtfs_data(self):
+    def _update_gtfs_data(self, use_local_path=None):
         with self._gtfs_lock:
-            self.gtfs_data = self.download_and_extract()
+            self.gtfs_data = self.download_and_extract(use_local_path)
 
     def _periodic_update_gtfs(self, use_local_path):
         while True:
             threading.Event().wait(7 * 24 * 60 * 60)  # Sleep for 1 week
-            self._update_gtfs_data()
+            self._update_gtfs_data(use_local_path)
 
     def download_and_extract(self, use_local_path=None):
-        file_names = ["stops.txt", "trips.txt", "stop_times.txt", "calendar.txt", "calendar_dates.txt"]
+        required_files = ["stops.txt", "trips.txt", "stop_times.txt", "calendar_dates.txt"]
+        optional_files = ["calendar.txt"]
         files = {}
 
         if use_local_path and os.path.isfile(use_local_path):
             zip_source = open(use_local_path, "rb")
         else:
-            response = requests.get(GTFS_STATIC_URL)
+            response = requests.get(GTFS_STATIC_URL, timeout=30)
+            response.raise_for_status()
             zip_source = BytesIO(response.content)
 
         with zipfile.ZipFile(zip_source) as z:
-            for name in file_names:
+            names = set(z.namelist())
+            missing_files = [name for name in required_files if name not in names]
+            if missing_files:
+                raise ValueError(f"GTFS archive missing required file(s): {', '.join(missing_files)}")
+
+            for name in required_files:
                 with z.open(name) as f:
                     files[name] = list(csv.DictReader(f.read().decode("utf-8").splitlines()))
+            for name in optional_files:
+                if name in names:
+                    with z.open(name) as f:
+                        files[name] = list(csv.DictReader(f.read().decode("utf-8").splitlines()))
+                else:
+                    files[name] = []
 
         if use_local_path:
             zip_source.close()
